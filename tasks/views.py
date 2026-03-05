@@ -8,6 +8,7 @@ from django.db.models import Count, Q
 from .models import Project, Task
 from .forms import ProjectForm, TaskForm, RegisterForm
 
+
 def _sync_project_completion(project):
     total_tasks = project.tasks.count()
     done_tasks = project.tasks.filter(status='done').count()
@@ -19,6 +20,7 @@ def _sync_project_completion(project):
         project.status = 'active'
         project.save(update_fields=['status', 'updated_at'])
 
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
@@ -27,11 +29,13 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            messages.success(request, f'Welcome, {user.username}! Your account was created.')
+            messages.success(
+                request, f'Welcome, {user.username}! Your account was created.')
             return redirect('dashboard')
     else:
         form = RegisterForm()
     return render(request, 'registration/register.html', {'form': form})
+
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -49,11 +53,13 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'registration/login.html', {'form': form})
 
+
 @require_POST
 def logout_view(request):
     logout(request)
     messages.info(request, 'You have been logged out.')
     return redirect('login')
+
 
 @login_required
 def dashboard(request):
@@ -64,7 +70,8 @@ def dashboard(request):
     timeline_projects = timeline_projects[:6]
 
     user_tasks = Task.objects.filter(project__owner=request.user)
-    recent_tasks = user_tasks.select_related('project').order_by('-created_at')[:5]
+    recent_tasks = user_tasks.select_related(
+        'project').order_by('-created_at')[:5]
     task_stats = user_tasks.aggregate(
         total_tasks=Count('id'),
         done_tasks=Count('id', filter=Q(status='done')),
@@ -81,6 +88,7 @@ def dashboard(request):
     }
     return render(request, 'tasks/dashboard.html', context)
 
+
 @login_required
 def project_list(request):
     status_filter = request.GET.get('status', '')
@@ -93,6 +101,7 @@ def project_list(request):
         'projects': projects,
         'status_filter': status_filter,
     })
+
 
 @login_required
 def project_detail(request, pk):
@@ -107,6 +116,7 @@ def project_detail(request, pk):
         'status_filter': status_filter,
     })
 
+
 @login_required
 def project_create(request):
     if request.method == 'POST':
@@ -119,7 +129,9 @@ def project_create(request):
             return redirect('project_detail', pk=project.pk)
     else:
         form = ProjectForm()
-    return render(request, 'tasks/project_form.html', {'form': form, 'action': 'Create'})
+    return render(request, 'tasks/project_form.html',
+                  {'form': form, 'action': 'Create'})
+
 
 @login_required
 def project_edit(request, pk):
@@ -136,6 +148,7 @@ def project_edit(request, pk):
         'form': form, 'action': 'Edit', 'project': project
     })
 
+
 @login_required
 def project_delete(request, pk):
     project = get_object_or_404(Project, pk=pk, owner=request.user)
@@ -144,7 +157,9 @@ def project_delete(request, pk):
         project.delete()
         messages.success(request, f'Project "{title}" deleted.')
         return redirect('project_list')
-    return render(request, 'tasks/project_confirm_delete.html', {'project': project})
+    return render(request, 'tasks/project_confirm_delete.html',
+                  {'project': project})
+
 
 @login_required
 def task_create(request, project_pk):
@@ -165,6 +180,7 @@ def task_create(request, project_pk):
         'form': form, 'project': project, 'action': 'Create'
     })
 
+
 @login_required
 def task_edit(request, pk):
     task = get_object_or_404(Task, pk=pk, project__owner=request.user)
@@ -181,6 +197,7 @@ def task_edit(request, pk):
         'form': form, 'project': task.project, 'action': 'Edit', 'task': task
     })
 
+
 @login_required
 def task_delete(request, pk):
     task = get_object_or_404(Task, pk=pk, project__owner=request.user)
@@ -193,6 +210,7 @@ def task_delete(request, pk):
         return redirect('project_detail', pk=project_pk)
     return render(request, 'tasks/task_confirm_delete.html', {'task': task})
 
+
 @login_required
 def task_status_update(request, pk):
     """Update task status from project detail form actions."""
@@ -203,14 +221,18 @@ def task_status_update(request, pk):
             task.status = new_status
             task.save()
             _sync_project_completion(task.project)
-            messages.success(request, f'Task status updated to "{new_status}".')
+            messages.success(
+                request, f'Task status updated to "{new_status}".')
     return redirect('project_detail', pk=task.project.pk)
+
 
 @login_required
 def profile(request):
     projects_count = Project.objects.filter(owner=request.user).count()
     tasks_count = Task.objects.filter(project__owner=request.user).count()
-    done_count = Task.objects.filter(project__owner=request.user, status='done').count()
+    done_count = Task.objects.filter(
+        project__owner=request.user,
+        status='done').count()
     return render(request, 'tasks/profile.html', {
         'projects_count': projects_count,
         'tasks_count': tasks_count,

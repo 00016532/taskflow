@@ -3,9 +3,11 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from tasks.models import Project, Task, Category
 
+
 @pytest.fixture
 def user(db):
     return User.objects.create_user(username='testuser', password='testpass123')
+
 
 @pytest.fixture
 def project(db, user):
@@ -16,9 +18,11 @@ def project(db, user):
         status='active'
     )
 
+
 @pytest.fixture
 def category(db):
     return Category.objects.create(name='Backend', color='#007bff')
+
 
 @pytest.fixture
 def task(db, project, category):
@@ -32,12 +36,14 @@ def task(db, project, category):
     t.categories.add(category)
     return t
 
+
 @pytest.mark.django_db
 def test_project_creation(project):
     """Test that a project is created with correct fields."""
     assert project.title == 'Test Project'
     assert project.status == 'active'
     assert str(project) == 'Test Project'
+
 
 @pytest.mark.django_db
 def test_task_creation(task):
@@ -47,11 +53,13 @@ def test_task_creation(task):
     assert task.priority == 'high'
     assert str(task) == 'Test Task'
 
+
 @pytest.mark.django_db
 def test_category_many_to_many(task, category):
     """Test many-to-many relationship between Task and Category."""
     assert category in task.categories.all()
     assert task in category.tasks.all()
+
 
 @pytest.mark.django_db
 def test_project_progress(project, task):
@@ -61,6 +69,7 @@ def test_project_progress(project, task):
     task.save()
     assert project.progress() == 100
 
+
 @pytest.mark.django_db
 def test_project_progress_is_100_when_project_completed(project):
     """Completed projects should show 100% progress even with no tasks."""
@@ -68,11 +77,13 @@ def test_project_progress_is_100_when_project_completed(project):
     project.save()
     assert project.progress() == 100
 
+
 @pytest.mark.django_db
 def test_project_belongs_to_user(project, user):
     """Test many-to-one: project linked to correct user."""
     assert project.owner == user
     assert project in user.projects.all()
+
 
 @pytest.mark.django_db
 def test_dashboard_requires_login(client):
@@ -81,14 +92,15 @@ def test_dashboard_requires_login(client):
     assert response.status_code == 302
     assert '/login/' in response.url
 
+
 @pytest.mark.django_db
 def test_logout_requires_post(client, user):
     """Logout endpoint should reject GET requests."""
     client.login(username='testuser', password='testpass123')
     response = client.get(reverse('logout'))
     assert response.status_code == 405
-    # Session remains valid after rejected GET.
     assert client.get(reverse('dashboard')).status_code == 200
+
 
 @pytest.mark.django_db
 def test_logout_post_logs_user_out(client, user):
@@ -99,12 +111,14 @@ def test_logout_post_logs_user_out(client, user):
     assert response.url == reverse('login')
     assert client.get(reverse('dashboard')).status_code == 302
 
+
 @pytest.mark.django_db
 def test_dashboard_authenticated(client, user):
     """Authenticated users can access the dashboard."""
     client.login(username='testuser', password='testpass123')
     response = client.get(reverse('dashboard'))
     assert response.status_code == 200
+
 
 @pytest.mark.django_db
 def test_dashboard_high_priority_counts_all_high_tasks(client, user, project):
@@ -118,16 +132,18 @@ def test_dashboard_high_priority_counts_all_high_tasks(client, user, project):
     assert response.status_code == 200
     assert response.context['high_priority'] == 2
 
+
 @pytest.mark.django_db
 def test_project_create_view(client, user):
     """Users can create a project via POST."""
     client.login(username='testuser', password='testpass123')
-    response = client.post(reverse('project_create'), {
+    client.post(reverse('project_create'), {
         'title': 'New Project',
         'description': 'Description',
         'status': 'active',
     })
     assert Project.objects.filter(title='New Project', owner=user).exists()
+
 
 @pytest.mark.django_db
 def test_project_list_only_shows_own(client, db):
@@ -142,14 +158,15 @@ def test_project_list_only_shows_own(client, db):
     assert 'User1 Project' in response.content.decode()
     assert 'User2 Project' not in response.content.decode()
 
+
 @pytest.mark.django_db
 def test_task_delete(client, user, task):
     """Users can delete their own tasks."""
     client.login(username='testuser', password='testpass123')
     task_id = task.pk
-    project_pk = task.project.pk
-    response = client.post(reverse('task_delete', args=[task_id]))
+    client.post(reverse('task_delete', args=[task_id]))
     assert not Task.objects.filter(pk=task_id).exists()
+
 
 @pytest.mark.django_db
 def test_task_status_update_changes_status(client, user, task):
@@ -160,15 +177,17 @@ def test_task_status_update_changes_status(client, user, task):
     task.refresh_from_db()
     assert task.status == 'done'
 
+
 @pytest.mark.django_db
 def test_task_status_update_rejects_non_owner(client, task):
     """Another user cannot update task status."""
-    other = User.objects.create_user(username='otheruser', password='pass12345')
+    User.objects.create_user(username='otheruser', password='pass12345')
     client.login(username='otheruser', password='pass12345')
     response = client.post(reverse('task_status_update', args=[task.pk]), {'status': 'done'})
     assert response.status_code == 404
     task.refresh_from_db()
     assert task.status == 'todo'
+
 
 @pytest.mark.django_db
 def test_project_auto_completes_when_all_tasks_done(client, user, project):
@@ -184,6 +203,7 @@ def test_project_auto_completes_when_all_tasks_done(client, user, project):
     client.post(reverse('task_status_update', args=[t2.pk]), {'status': 'done'})
     project.refresh_from_db()
     assert project.status == 'completed'
+
 
 @pytest.mark.django_db
 def test_project_reopens_when_completed_project_gets_open_task(client, user, project):
