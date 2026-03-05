@@ -1,4 +1,4 @@
-# 📋 TaskFlow — Task & Project Manager
+# TaskFlow — Task & Project Manager
 
 A full-featured task and project management web application built with Django, deployed using Docker, Nginx, and PostgreSQL on a cloud server with a complete CI/CD pipeline.
 
@@ -31,7 +31,6 @@ A full-featured task and project management web application built with Django, d
 | App Server | Gunicorn |
 | Containerization | Docker, Docker Compose |
 | CI/CD | GitHub Actions |
-| SSL | Let's Encrypt (Certbot) |
 | Frontend | Bootstrap 5, Bootstrap Icons |
 
 ---
@@ -60,20 +59,22 @@ User (Django built-in)
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/taskflow.git
+git clone https://github.com/00016532/taskflow.git
 cd taskflow
 
 # 2. Copy environment file
 cp .env.example .env
-# Edit .env and set DEBUG=True for development
 
 # 3. Start with Docker Compose (development mode)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.local.yml up --build
 
-# 4. Create superuser (in a new terminal)
-docker compose exec web python manage.py createsuperuser
+# 4. Run migrations
+docker compose -f docker-compose.local.yml exec web python manage.py migrate
 
-# 5. Visit the app
+# 5. Create superuser
+docker compose -f docker-compose.local.yml exec web python manage.py createsuperuser
+
+# 6. Visit the app
 # App:   http://localhost:8000
 # Admin: http://localhost:8000/admin
 ```
@@ -86,7 +87,7 @@ docker compose exec web python manage.py createsuperuser
 
 ```bash
 # SSH into your server
-ssh user@YOUR_SERVER_IP
+ssh ubuntu@4.223.87.102
 
 # Install Docker
 curl -fsSL https://get.docker.com | sh
@@ -96,9 +97,9 @@ sudo usermod -aG docker $USER
 sudo apt install docker-compose-plugin -y
 
 # Configure firewall
-sudo ufw allow 22   # SSH
-sudo ufw allow 80   # HTTP
-sudo ufw allow 443  # HTTPS
+sudo ufw allow 22
+sudo ufw allow 80
+sudo ufw allow 443
 sudo ufw enable
 ```
 
@@ -107,26 +108,19 @@ sudo ufw enable
 ```bash
 sudo mkdir -p /opt/taskflow
 cd /opt/taskflow
-git clone https://github.com/YOUR_USERNAME/taskflow.git .
+git clone https://github.com/00016532/taskflow.git .
 
 # Create production .env
 cp .env.example .env
-nano .env  # Fill in real values
+nano .env
 ```
 
-### 3. Get SSL certificate
+### 3. Start services
 
 ```bash
-# Get certificate using certbot
-docker compose --profile certbot run certbot
-
-# Update nginx/nginx.conf with your real domain name
-```
-
-### 4. Start services
-
-```bash
-docker compose up -d
+docker compose up -d --build
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
 docker compose exec web python manage.py createsuperuser
 ```
 
@@ -138,13 +132,13 @@ docker compose exec web python manage.py createsuperuser
 |----------|-------------|---------|
 | `SECRET_KEY` | Django secret key | `your-random-secret` |
 | `DEBUG` | Debug mode | `False` |
-| `ALLOWED_HOSTS` | Allowed domains | `yourdomain.uz` |
+| `ALLOWED_HOSTS` | Allowed domains | `itstask.duckdns.org` |
 | `POSTGRES_DB` | Database name | `taskmanager` |
-| `POSTGRES_USER` | DB username | `taskmanager_user` |
+| `POSTGRES_USER` | DB username | `postgres` |
 | `POSTGRES_PASSWORD` | DB password | `strongpassword` |
 | `POSTGRES_HOST` | DB hostname | `db` |
-| `DOMAIN` | Your domain | `yourdomain.uz` |
-| `ADMIN_EMAIL` | For SSL cert | `you@email.com` |
+| `DOMAIN` | Your domain | `itstask.duckdns.org` |
+| `ADMIN_EMAIL` | Admin email | `you@email.com` |
 
 ---
 
@@ -156,21 +150,15 @@ docker compose exec web python manage.py createsuperuser
 | `DOCKERHUB_TOKEN` | Docker Hub access token |
 | `SSH_PRIVATE_KEY` | Private key to SSH into server |
 | `SSH_HOST` | Server IP address |
-| `SSH_USERNAME` | SSH username (usually `ubuntu`) |
-
----
-
-## Screenshots
-
-*(Add screenshots of your running application here)*
+| `SSH_USERNAME` | SSH username |
 
 ---
 
 ## Live Demo
 
-- **Application:** https://yourdomain.uz
-- **Docker Hub:** https://hub.docker.com/r/YOUR_USERNAME/taskflow
+- **Application:** http://itstask.duckdns.org
+- **Docker Hub:** https://hub.docker.com/r/drbekzod/taskflow
 
 ### Test Credentials
-- Username: `demo`
-- Password: `demo1234`
+- Username: `admin`
+- Password: `1234`
