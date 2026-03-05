@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — TaskFlow{% endblock %}
+
+{% block content %}
+<section class="workspace-hero">
+    <h2>Welcome, {{ user.username }}</h2>
+    <p>Track projects and tasks in one focused workspace.</p>
+</section>
+
+<section class="workspace-metrics">
+    <article class="metric-card metric-card-accent">
+        <p class="metric-label">Total Tasks</p>
+        <h3>{{ total_tasks }}</h3>
+    </article>
+    <article class="metric-card">
+        <p class="metric-label">Completed</p>
+        <h3>{{ done_tasks }}</h3>
+        <span class="metric-note">progress done</span>
+    </article>
+    <article class="metric-card">
+        <p class="metric-label">In Progress</p>
+        <h3>{{ in_progress_tasks }}</h3>
+        <span class="metric-note">currently active</span>
+    </article>
+    <article class="metric-card">
+        <p class="metric-label">High Priority</p>
+        <h3>{{ high_priority }}</h3>
+        <span class="metric-note">needs focus</span>
+    </article>
+</section>
+
+<section class="workspace-grid">
+    <article class="workspace-card">
+        <header class="workspace-card-head">
+            <h4>Task Pulse</h4>
+            <span>live distribution</span>
+        </header>
+        <div class="pulse-bars">
+            <div class="pulse-item">
+                <div class="pulse-meta">
+                    <span>To Do</span>
+                    <strong>{{ todo_tasks }}</strong>
+                </div>
+                <div class="pulse-track"><span style="width: {% if total_tasks %}{% widthratio todo_tasks total_tasks 100 %}{% else %}0{% endif %}%;"></span></div>
+            </div>
+            <div class="pulse-item">
+                <div class="pulse-meta">
+                    <span>In Progress</span>
+                    <strong>{{ in_progress_tasks }}</strong>
+                </div>
+                <div class="pulse-track"><span style="width: {% if total_tasks %}{% widthratio in_progress_tasks total_tasks 100 %}{% else %}0{% endif %}%;"></span></div>
+            </div>
+            <div class="pulse-item">
+                <div class="pulse-meta">
+                    <span>Done</span>
+                    <strong>{{ done_tasks }}</strong>
+                </div>
+                <div class="pulse-track"><span style="width: {% if total_tasks %}{% widthratio done_tasks total_tasks 100 %}{% else %}0{% endif %}%;"></span></div>
+            </div>
+            <div class="pulse-item">
+                <div class="pulse-meta">
+                    <span>High Priority</span>
+                    <strong>{{ high_priority }}</strong>
+                </div>
+                <div class="pulse-track"><span style="width: {% if total_tasks %}{% widthratio high_priority total_tasks 100 %}{% else %}0{% endif %}%;"></span></div>
+            </div>
+        </div>
+    </article>
+
+    <article class="workspace-card">
+        <header class="workspace-card-head">
+            <h4>Project Timeline</h4>
+            <div class="chip-row">
+                <a href="?" class="chip {% if not status_filter %}chip-active{% endif %}">Everything</a>
+                <a href="?status=active" class="chip {% if status_filter == 'active' %}chip-active{% endif %}">Active</a>
+                <a href="?status=completed" class="chip {% if status_filter == 'completed' %}chip-active{% endif %}">Closed</a>
+            </div>
+        </header>
+
+        <div class="timeline-list">
+            {% if timeline_projects %}
+                {% for project in timeline_projects %}
+                <div class="timeline-item">
+                    <div class="timeline-top">
+                        <p>{{ project.title }}</p>
+                        <span>{{ project.progress }}%</span>
+                    </div>
+                    <div class="timeline-track">
+                        <span style="width: {{ project.progress }}%;"></span>
+                    </div>
+                    <div class="timeline-bottom">
+                        <small>{{ project.created_at|date:"M j, Y" }}</small>
+                        <a href="{% url 'project_detail' project.pk %}">Open</a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty-copy">No projects match this filter.</p>
+            {% endif %}
+        </div>
+    </article>
+</section>
+
+<section class="workspace-card recent-card">
+    <header class="workspace-card-head">
+        <h4>Recent Tasks</h4>
+        <a href="{% url 'project_list' %}" class="chip">View Projects</a>
+    </header>
+    {% if recent_tasks %}
+        <div class="task-stream">
+            {% for task in recent_tasks %}
+            <div class="stream-item">
+                <div class="stream-main">
+                    <h6>{{ task.title|truncatechars:52 }}</h6>
+                    <p>{{ task.project.title }}</p>
+                </div>
+                <span class="priority-pill {{ task.priority }}">{{ task.priority }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="empty-copy">No tasks yet. Create a project to get started.</p>
+    {% endif %}
+</section>
+{% endblock %}

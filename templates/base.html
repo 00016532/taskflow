@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TaskFlow{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% load static %}
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+</head>
+<body class="app-bg {% if not user.is_authenticated %}auth-page{% endif %}">
+<div class="ambient-lights" aria-hidden="true">
+    <span class="ambient-orb orb-a"></span>
+    <span class="ambient-orb orb-b"></span>
+    <span class="ambient-orb orb-c"></span>
+    <span class="ambient-orb orb-d"></span>
+</div>
+{% if user.is_authenticated %}
+<main class="planner-shell">
+    <div class="planner-panel">
+        <nav class="planner-nav workspace-nav">
+            <a class="planner-brand fw-bold" href="{% url 'dashboard' %}">Welcome, {{ user.username }}</a>
+            <div class="workspace-tabs">
+                <a class="workspace-tab {% if request.resolver_match.url_name == 'project_list' %}active{% endif %}" href="{% url 'project_list' %}">Projects</a>
+                <a class="workspace-tab {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">Statistics</a>
+            </div>
+            <div class="workspace-actions">
+                <a class="workspace-round-btn" href="{% url 'project_create' %}" aria-label="Create project">+</a>
+                <form method="post" action="{% url 'logout' %}" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="workspace-pill-btn">Logout</button>
+                </form>
+            </div>
+        </nav>
+        <section class="planner-content">
+{% else %}
+<main class="planner-shell">
+    <div class="planner-panel auth-panel">
+        <nav class="planner-nav auth-nav">
+            <a class="planner-brand fw-bold" href="{% url 'login' %}">TaskFlow</a>
+        </nav>
+        <section class="planner-content auth-content">
+{% endif %}
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+{% if user.is_authenticated %}
+        </section>
+    </div>
+</main>
+{% else %}
+        </section>
+    </div>
+</main>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% load static %}
+<script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

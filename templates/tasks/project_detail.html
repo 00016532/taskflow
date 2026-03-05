@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.title }} — TaskFlow{% endblock %}
+
+{% block content %}
+<div class="day-title">
+    <h2>{{ project.title }}</h2>
+    <p>{% now "F j, Y" %}</p>
+    <div class="subline">
+        <span class="badge
+            {% if project.status == 'active' %}bg-success
+            {% elif project.status == 'completed' %}bg-secondary
+            {% else %}bg-warning{% endif %} me-1">
+            {{ project.get_status_display }}
+        </span>
+        {{ project.completed_task_count }}/{{ project.task_count }} tasks done
+    </div>
+</div>
+
+<div class="d-flex gap-2 mb-3">
+    <a href="{% url 'project_list' %}" class="btn btn-sm btn-outline-secondary">Projects</a>
+    <a href="{% url 'project_edit' project.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+    <a href="{% url 'project_delete' project.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body py-3">
+        <div class="d-flex justify-content-between small fw-semibold mb-2">
+            <span>Project Progress</span>
+            <span>{{ project.progress }}%</span>
+        </div>
+        <div class="progress" style="height: 10px;">
+            <div class="progress-bar" style="width: {{ project.progress }}%" role="progressbar"></div>
+        </div>
+    </div>
+</div>
+
+<a href="{% url 'task_create' project.pk %}" class="quick-add-link mb-3">
+    Add a task...
+</a>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <h5 class="fw-semibold mb-0">Task List</h5>
+    <div class="btn-group btn-group-sm">
+        <a href="?" class="btn btn-outline-secondary {% if not status_filter %}active{% endif %}">All</a>
+        <a href="?status=todo" class="btn btn-outline-secondary {% if status_filter == 'todo' %}active{% endif %}">To Do</a>
+        <a href="?status=in_progress" class="btn btn-outline-secondary {% if status_filter == 'in_progress' %}active{% endif %}">In Progress</a>
+        <a href="?status=done" class="btn btn-outline-secondary {% if status_filter == 'done' %}active{% endif %}">Done</a>
+    </div>
+</div>
+
+{% if tasks %}
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-3 p-md-4">
+    {% for task in tasks %}
+    <div class="task-row">
+        <form method="post" action="{% url 'task_status_update' task.pk %}">
+            {% csrf_token %}
+            {% if task.status == 'todo' %}
+            <button name="status" value="in_progress" class="status-dot status-dot-action" title="Start task" aria-label="Start task">
+                Start
+            </button>
+            {% elif task.status == 'in_progress' %}
+            <button name="status" value="done" class="status-dot status-dot-action" title="Mark done" aria-label="Mark done">
+                Done
+            </button>
+            {% else %}
+            <button name="status" value="todo" class="status-dot status-dot-action is-done" title="Reopen task" aria-label="Reopen task">
+                Reopen
+            </button>
+            {% endif %}
+        </form>
+
+        <div class="task-copy">
+            <h6 class="{% if task.status == 'done' %}done-text{% endif %}">
+                {{ task.title }}
+            </h6>
+            {% if task.description %}
+            <p class="desc">{{ task.description|truncatechars:72 }}</p>
+            {% else %}
+            <p class="desc">
+                {% if task.due_date %}Due {{ task.due_date }}{% else %}No description{% endif %}
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="task-side">
+            <span class="priority-pill {{ task.priority }}">{{ task.priority }}</span>
+            <a href="{% url 'task_edit' task.pk %}" class="task-menu" title="Edit task" aria-label="Edit task">
+                Edit
+            </a>
+            <a href="{% url 'task_delete' task.pk %}" class="task-menu" title="Delete task" aria-label="Delete task">
+                Delete
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+</div>
+{% else %}
+<div class="text-center py-4 text-muted">
+    <p class="mb-2">No tasks yet.</p>
+    <a href="{% url 'task_create' project.pk %}" class="btn btn-primary btn-sm">
+        Add your first task
+    </a>
+</div>
+{% endif %}
+{% endblock %}

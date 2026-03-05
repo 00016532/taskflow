@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Projects — TaskFlow{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0">Projects</h2>
+    <a href="{% url 'project_create' %}" class="btn btn-primary">
+        New Project
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-10">
+                <label class="form-label small text-muted">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    <option value="on_hold" {% if status_filter == 'on_hold' %}selected{% endif %}>On Hold</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if projects %}
+<div class="row g-4">
+    {% for project in projects %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title fw-semibold mb-0">{{ project.title }}</h5>
+                    <span class="badge
+                        {% if project.status == 'active' %}bg-success
+                        {% elif project.status == 'completed' %}bg-secondary
+                        {% else %}bg-warning text-dark{% endif %}">
+                        {{ project.get_status_display }}
+                    </span>
+                </div>
+                <p class="card-text text-muted small">{{ project.description|truncatechars:80 }}</p>
+
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Progress</span><span>{{ project.progress }}%</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {{ project.progress }}%"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-3 text-muted small">
+                    <span>{{ project.task_count }} tasks</span>
+                    <span>{{ project.completed_task_count }} done</span>
+                    {% if project.deadline %}
+                    <span>Due {{ project.deadline }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-sm btn-primary flex-grow-1">
+                        View
+                    </a>
+                    <a href="{% url 'project_edit' project.pk %}" class="btn btn-sm btn-outline-secondary">
+                        Edit
+                    </a>
+                    <a href="{% url 'project_delete' project.pk %}" class="btn btn-sm btn-outline-danger">
+                        Delete
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+    <h5 class="mt-3">No projects found</h5>
+    <p>Try adjusting your filters or <a href="{% url 'project_create' %}">create a new project</a>.</p>
+</div>
+{% endif %}
+{% endblock %}
